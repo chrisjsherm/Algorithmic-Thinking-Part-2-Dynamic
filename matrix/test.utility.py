@@ -57,7 +57,7 @@ class TestMatrixUtility(unittest.TestCase):
                 'C': -4,
                 'G': -4,
                 'T': -4,
-                '-': 10
+                '-': -4
             },
         })
 
@@ -72,23 +72,24 @@ class TestMatrixUtility(unittest.TestCase):
             alphabet, self._diag_score, self._off_diag_score, self._dash_score
         )
 
-        self.assertDictEqual(matrix_utility.compute_alignment_matrix(
+        self.assertListEqual(matrix_utility.compute_alignment_matrix(
             seq_x, seq_y, scoring_matrix, True
-        ), {
-            0: {0: 0, 1: -4, 2: -8, 3: -12, 4: -16},
-            1: {0: -4, 1: 10, 2: 6, 3: 2, 4: -2},
-            2: {0: -8, 1: 6, 2: 14, 3: 10, 4: 6},
-            3: {0: -12, 1: 2, 2: 10, 3: 18, 4: 20}
-        })
+        ), [
+            [0, -4, -8, -12, -16],
+            [-4, 10, 6, 2, -2],
+            [-8, 6, 14, 10, 6],
+            [-12, 2, 10, 18, 20],
+        ])
 
-        self.assertDictEqual(matrix_utility.compute_alignment_matrix(
+        self.assertListEqual(matrix_utility.compute_alignment_matrix(
             seq_x, seq_y, scoring_matrix, False
-        ), {
-            0: {0: 0, 1: 0, 2: 0, 3: 0, 4: 0},
-            1: {0: 0, 1: 10, 2: 6, 3: 4, 4: 4},
-            2: {0: 0, 1: 10, 2: 14, 3: 10, 4: 8},
-            3: {0: 0, 1: 6, 2: 14, 3: 18, 4: 20}
-        })
+        ), [
+            [0, 0, 0, 0, 0],
+            [0, 10, 6, 4, 4],
+            [0, 10, 14, 10, 8],
+            [0, 6, 14, 18, 20],
+        ])
+        
 
     def test_determine_alignment_score(self):
         self.assertEqual(matrix_utility.determine_alignment_score(0, True), 0)
@@ -98,6 +99,44 @@ class TestMatrixUtility(unittest.TestCase):
         self.assertEqual(
             matrix_utility.determine_alignment_score(-5, False), -5)
         self.assertEqual(matrix_utility.determine_alignment_score(5, False), 5)
+
+    def test_compute_global_alignment(self):
+        seq_x = ['A', 'A', 'T']
+        seq_y = ['A', 'G', 'C', 'T']
+
+        alphabet = set(seq_x)
+        alphabet |= set(seq_y)
+
+        scoring_matrix = matrix_utility.build_scoring_matrix(
+            alphabet, self._diag_score, self._off_diag_score, self._dash_score
+        )
+
+        alignment_matrix = matrix_utility.compute_alignment_matrix(
+            seq_x, seq_y, scoring_matrix, True
+        )
+
+        self.assertTupleEqual(matrix_utility.compute_global_alignment(
+            seq_x, seq_y, scoring_matrix, alignment_matrix
+        ), (20,  'A-AT', 'AGCT'))
+
+    def test_compute_local_alignment(self):
+        seq_x = ['A', 'A', 'T']
+        seq_y = ['A', 'G', 'C', 'T']
+
+        alphabet = set(seq_x)
+        alphabet |= set(seq_y)
+
+        scoring_matrix = matrix_utility.build_scoring_matrix(
+            alphabet, self._diag_score, self._off_diag_score, self._dash_score
+        )
+
+        alignment_matrix = matrix_utility.compute_alignment_matrix(
+            seq_x, seq_y, scoring_matrix, False
+        )
+
+        self.assertTupleEqual(matrix_utility.compute_local_alignment(
+            seq_x, seq_y, scoring_matrix, alignment_matrix
+        ), (20, 'A-AT', 'AGCT'))
 
 
 test_suite = unittest.TestLoader().loadTestsFromTestCase(
